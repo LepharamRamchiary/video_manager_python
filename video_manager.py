@@ -1,7 +1,11 @@
-
+import json
 
 def load_data():
-    pass
+    try:
+        with open('data.txt', 'r') as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return []
 
 def list_all_videos(videos):
     pass
