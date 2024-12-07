@@ -1,75 +1,39 @@
-# import json
+import os
+from dotenv import load_dotenv
+from pymongo import MongoClient
+from bson import ObjectId
 
-import sqlite3
-con = sqlite3.connect("data.bd")
-cursor = con.cursor()
+load_dotenv()
 
-cursor.execute('''
-    create table IF NOT EXISTS videos (
-        id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL,
-        time TEXT NOT NULL
-    )                      
-''')
+client = MongoClient(os.getenv("MONGODB_URL"))
 
-# def load_data():
-#     try:
-#         with open('data.txt', 'r') as file:
-#             return json.load(file)
-#     except FileNotFoundError:
-#         return []
+db = client["video_manager_db"]
+video_collection = db["videos"]
 
-# def save_data_helper(videos):
-    # with open('data.txt', 'w') as file:
-    #     json.dump(videos, file)
-        
 def list_all_videos():
-    cursor.execute("Select * from videos")
-    rows = cursor.fetchall()
-    
-    print("\n")
-    print("*" * 30)
-    
-    if not rows:
-        print("No videos available")
-    else:
-        for row in rows:
-            print(row)
-    
-    # for row in cursor.fetchall():
-    #     print(row)
-    print("\n")
-    print("*" * 30)
+    videos = video_collection.find()
+    for video in videos:
+        print(f"ID: {video['_id']}, Name: {video['name']}, Time: {video['time']}")
 
 def add_video(name, time):
-    cursor.execute("INSERT INTO videos (name, time) VALUES (?, ?)", (name, time))
-    con.commit()    
-    print(f"Video '{name}' add successfully")
- 
+    video_collection.insert_one({"name": name, "time": time})
+
 def update_video(video_id, new_name, new_time):
-    cursor.execute("UPDATE videos SET name = ?, time = ? WHERE id = ?", (new_name, new_time, video_id))
-    con.commit()
-    print(f"updated successfully")
-    
+    video_collection.update_one({"_id": ObjectId(video_id)}, {"$set": {"name": new_name, "time": new_time}})
 
 def delete_video(video_id):
-    cursor.execute("DELETE from videos where id = ?", (video_id,))
-    con.commit()
-    print(f"deleted successfully")
-
+    video_collection.delete_one({"_id": ObjectId(video_id)})
 
 def main():
-    # videos = load_data()
     while True:
-        print("\n Video Manager with DB | choose an option")
-        print("1. List all videos")
-        print("2. Add a video")
+        print("\n Video Manager | choose an option ")
+        print("1. List All videos")
+        print("2. Add a new video")
         print("3. Update a video")
         print("4. Delete a video")
-        print("5. Exit app")
+        print("5. Exit from application")
         
         choice = input("Enter your choice: ")
-        # print(videos)
         
         if choice == '1':
             list_all_videos()
@@ -78,35 +42,18 @@ def main():
             time = input("Enter the video time: ")
             add_video(name, time)
         elif choice == '3':
-            video_id = input("Enter video id to update: ")
-            name = input("Enter the video name: ")
-            time = input("Enter the video time: ")
+            video_id = input("Enter the video id to be update: ")
+            name = input("Enter the video name to be update: ")
+            time = input("Enter the video time to be update: ")
             update_video(video_id, name, time)
         elif choice == '4':
-            video_id = input("Enter video id to Delete: ")
+            video_id = input("Enter the video id to be deleted: ")
             delete_video(video_id)
         elif choice == '5':
             break
         else:
             print("Invalid choice")
-    
-    con.close()
-        
-        # match choice:
-            # case '1':
-            #     list_all_videos(videos)
-            # case '2':
-            #     add_video(videos)
-            # case '3':
-            #     update_video(videos)
-            # case '4':
-            #     delete_video(videos)
-            # case '5':
-            #     break
-            # case _:
-            #     print("Invalid choice")
-        
-                
+
+
 if __name__ == "__main__":
     main()
-        
